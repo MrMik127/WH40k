@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>War Organ – Costruttore di liste</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700&family=Source+Sans+3:wght@400;600&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#dfe5e8;--pan:#f6f8f9;--ink:#1b2a33;--mut:#5d6f79;--line:#c3cdd2;--acc:#1f6f78;--brass:#9a7416;--bad:#a23b2a;--ok:#2f7a4d}
+@media (prefers-color-scheme:dark){:root:not([data-theme=light]){--bg:#11191e;--pan:#1a252c;--ink:#e6edf0;--mut:#93a5af;--line:#2d3b44;--acc:#4fb3bf;--brass:#d9b24c;--bad:#e0705d;--ok:#5fc08a}}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 "Source Sans 3",system-ui,sans-serif}
+h1,h2,h3{font-family:"Barlow Condensed","Arial Narrow",sans-serif;margin:0;letter-spacing:.01em}
+button,input,select,textarea{font:inherit;color:inherit}
+button{cursor:pointer;border:1px solid var(--line);background:var(--pan);padding:.45rem .8rem;border-radius:4px}
+button:hover{border-color:var(--acc)}button.p{background:var(--acc);border-color:var(--acc);color:#fff}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+input,select,textarea{background:var(--pan);border:1px solid var(--line);border-radius:4px;padding:.4rem .5rem;max-width:100%}
+header{display:flex;flex-wrap:wrap;gap:.75rem 1.5rem;align-items:center;justify-content:space-between;padding:1rem 1.25rem;border-bottom:3px solid var(--acc);background:var(--pan)}
+header h1{font-size:2rem}header small{color:var(--mut)}
+main{display:grid;grid-template-columns:minmax(260px,340px) 1fr;gap:1rem;padding:1rem 1.25rem;max-width:1200px;margin:auto}
+@media(max-width:800px){main{grid-template-columns:1fr}}
+section{background:var(--pan);border:1px solid var(--line);border-radius:6px;padding:1rem}
+section h2{font-size:1.4rem;margin-bottom:.6rem}
+label{display:block;font-size:.85rem;color:var(--mut);margin:.5rem 0 .15rem}
+.row{display:flex;gap:.5rem;flex-wrap:wrap;align-items:center}
+.cat{font-family:"Barlow Condensed",sans-serif;font-weight:700;font-size:1.05rem;color:var(--acc);border-bottom:1px solid var(--line);margin:.8rem 0 .3rem}
+.cat-i{display:flex;justify-content:space-between;align-items:center;gap:.5rem;padding:.35rem 0;border-bottom:1px dotted var(--line)}
+.cat-i span:last-child{color:var(--mut);white-space:nowrap}
+.tot{font-family:"Barlow Condensed",sans-serif;font-size:2.6rem;font-weight:700;line-height:1}
+.bar{height:8px;background:var(--line);border-radius:4px;overflow:hidden;margin:.4rem 0}
+.bar i{display:block;height:100%;background:var(--ok)}.over .bar i{background:var(--bad)}.over .tot{color:var(--bad)}
+.u{border:1px solid var(--line);border-left:5px solid var(--acc);border-radius:4px;padding:.7rem .8rem;margin:.6rem 0;background:var(--bg)}
+.u.w{border-left-color:var(--brass)}
+.u h3{font-size:1.25rem}.pts{font-family:"Barlow Condensed",sans-serif;font-size:1.35rem;font-weight:700;color:var(--brass)}
+.u .row>div{flex:1 1 140px}
+.msg{padding:.7rem;border-radius:4px;background:var(--bg);border:1px solid var(--bad);margin:.5rem 0}
+.mut{color:var(--mut)}
+</style>
+</head>
+<body>
+<header>
+  <div><h1>War Organ</h1><small id="ds">Costruttore di liste d'armata</small></div>
+  <div class="row"><button id="bImp">Importa lista</button><button id="bExp">Esporta JSON</button><button id="bTxt" class="p">Copia testo</button></div>
+</header>
+<main>
+  <section aria-label="Catalogo unità">
+    <h2>Catalogo</h2>
+    <label for="fz">Fazione</label><select id="fz" style="width:100%"></select>
+    <label for="q">Cerca unità</label><input id="q" type="search" style="width:100%" placeholder="Nome dell'unità">
+    <div id="cat"></div>
+    <details style="margin-top:1rem"><summary>Origine dei dati (GitHub)</summary>
+      <label for="repo">Repository (utente/nome)</label><input id="repo" style="width:100%" placeholder="BSData/wh40k-11e">
+      <label for="br">Branch</label><input id="br" style="width:100%">
+      <label for="pth">Cartella dati</label><input id="pth" style="width:100%">
+      <div class="row" style="margin-top:.6rem"><button id="bSave" class="p">Salva e ricarica</button><button id="bDemo">Usa dati locali</button></div>
+      <p class="mut" style="font-size:.85rem">Legge <code>index.json</code> e i file delle fazioni da raw.githubusercontent.com.</p>
+    </details>
+  </section>
+  <section aria-label="La tua lista">
+    <div class="row" style="justify-content:space-between"><h2 style="margin:0">La tua lista</h2>
+      <div class="row"><select id="ls" aria-label="Liste salvate"></select><button id="bNew">Nuova</button><button id="bDel">Elimina</button></div></div>
+    <div class="row"><div><label for="nm">Nome lista</label><input id="nm"></div><div><label for="mp">Punti massimi</label><input id="mp" type="number" min="0" step="25" style="width:7rem"></div></div>
+    <div id="sum" style="margin:.8rem 0"></div>
+    <div id="msg"></div>
+    <div id="units"></div>
+  </section>
+</main>
+<script>
+"use strict";
+const $=s=>document.querySelector(s);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const LS={get(k,d){try{const v=localStorage.getItem(k);return v?JSON.parse(v):d}catch{return d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch{}}};
+const DEMO={index:{data_set:"11a Edizione (dati locali)",fazioni:[{id:"esempio",nome:"Fazione di esempio",file:"esempio.json"}]},
+ fazioni:{esempio:{unita:[
+ {id:"comandante",nome:"Comandante di esempio",ruolo:"Personaggi",punti:[{modelli:1,punti:80}],potenziamenti:[{nome:"Reliquia antica",punti:20},{nome:"Stendardo di guerra",punti:15}]},
+ {id:"squadra-base",nome:"Squadra base",ruolo:"Battaglia",punti:[{modelli:5,punti:90},{modelli:10,punti:180}]},
+ {id:"veterani",nome:"Veterani",ruolo:"Battaglia",punti:[{modelli:3,punti:75},{modelli:6,punti:150}]},
+ {id:"carro",nome:"Carro da battaglia",ruolo:"Veicoli",punti:[{modelli:1,punti:140}]}]}}};
+let cfg=LS.get("wo_cfg2",{repo:"BSData/wh40k-11e",branch:"main",path:"",demo:false});
+let lists=LS.get("wo_lists",[]),cur=LS.get("wo_cur",null),index=null,cache={};
+const uid=()=>Math.random().toString(36).slice(2,9);
+const L=()=>lists.find(l=>l.id===cur);
+const save=()=>{LS.set("wo_lists",lists);LS.set("wo_cur",cur)};
+const base=()=>`https://raw.githubusercontent.com/${cfg.repo}/${cfg.branch}/${cfg.path.replace(/^\/|\/$/g,"")?cfg.path.replace(/^\/|\/$/g,"")+"/":""}`;
+/* ---- Adattatore BSData (formato BattleScribe convertito in JSON) ---- */
+const isBS=()=>/^bsdata\/wh40k-11e$/i.test(cfg.repo)&&!cfg.demo;
+const BS_FILES=["Aeldari - Craftworlds","Aeldari - Drukhari","Chaos - Chaos Daemons","Chaos - Chaos Knights","Chaos - Chaos Space Marines","Chaos - Death Guard","Chaos - Emperor's Children","Chaos - Thousand Sons","Chaos - Titanicus Traitoris","Chaos - World Eaters","Genestealer Cults","Imperium - Adepta Sororitas","Imperium - Adeptus Custodes","Imperium - Adeptus Mechanicus","Imperium - Adeptus Titanicus","Imperium - Agents of the Imperium","Imperium - Astra Militarum","Imperium - Black Templars","Imperium - Blood Angels","Imperium - Dark Angels","Imperium - Deathwatch","Imperium - Grey Knights","Imperium - Imperial Fists","Imperium - Imperial Knights","Imperium - Iron Hands","Imperium - Raven Guard","Imperium - Salamanders","Imperium - Space Marines","Imperium - Space Wolves","Imperium - Ultramarines","Imperium - White Scars","Leagues of Votann","Necrons","Orks","T'au Empire","Tyranids","Unaligned Forces"];
+const BS_LIBS=["Aeldari - Aeldari Library","Chaos - Chaos Daemons Library","Chaos - Chaos Knights Library","Imperium - Astra Militarum - Library","Imperium - Imperial Knights - Library"];
+const BS_CH=["Black Templars","Blood Angels","Dark Angels","Deathwatch","Imperial Fists","Iron Hands","Raven Guard","Salamanders","Space Wolves","Ultramarines","White Scars"];
+const RUOLI={"Epic Hero":"Eroi epici","Character":"Personaggi","Characters":"Personaggi","Battleline":"Linea di battaglia","Infantry":"Fanteria","Vehicle":"Veicoli","Monster":"Mostri","Mounted":"Cavalleria","Transport":"Trasporti","Fortification":"Fortificazioni","Beast":"Bestie","Swarm":"Sciami"};
+const bsFiles=s=>[s,...BS_LIBS.filter(l=>{const ls=l.replace(/\s*-?\s*Library$/,""),p=ls.split(" - ");return s.startsWith(ls)||(p[0]===p[1]&&s.startsWith(p[0]+" - "))}),
+ ...(BS_CH.some(c=>s==="Imperium - "+c)?["Imperium - Space Marines"]:[]),...(s==="Tyranids"?["Library - Tyranids"]:[]),...(/Titanicus/.test(s)?["Library - Titans"]:[])];
+const g=(o,k)=>o?(o[k]??o["@"+k]??o["_"+k]):undefined;
+const kids=(o,k)=>{const v=g(o,k);if(v==null)return[];if(Array.isArray(v))return v;if(typeof v==="object"){const i=g(v,k.replace(/s$/,""));return i!=null?(Array.isArray(i)?i:[i]):[v]}return[]};
+const ptsOf=o=>kids(o,"costs").filter(c=>/^(pts|points?)$/i.test(g(c,"name")||"")).reduce((t,c)=>t+(+g(c,"value")||0),0);
+function bsUnits(node,out){ if(!node||typeof node!=="object")return;
+  if(!Array.isArray(node)&&g(node,"type")==="unit"&&g(node,"name")){
+    let p=ptsOf(node);if(!p){const f=[];(function w(n){if(n&&typeof n==="object"){if(!Array.isArray(n)){const c=ptsOf(n);if(c)f.push(c)}Object.values(n).forEach(w)}})(node);p=f.length?Math.min(...f):0}
+    const cats=kids(node,"categoryLinks").map(c=>g(c,"name")).filter(n=>n&&!/^faction/i.test(n));
+    const r=cats.find(c=>RUOLI[c])||cats[0]||"Altro";
+    out.push({id:g(node,"id")||g(node,"name"),nome:g(node,"name"),ruolo:RUOLI[r]||r,base:true,punti:[{modelli:1,punti:p}]});}
+  Object.values(node).forEach(v=>bsUnits(v,out));}
+async function loadBS(file){const out=[];
+  for(const f of bsFiles(file)){const r=await fetch(base()+encodeURIComponent(f+".json"));if(!r.ok)throw new Error(`${f}.json: HTTP ${r.status}`);
+    const j=await r.json(),n=out.length;bsUnits(j,out);
+    if(f===file&&out.length===n)throw new Error(`nessuna unità riconosciuta in ${f}.json (chiavi principali: ${Object.keys(j).slice(0,8).join(", ")})`)}
+  const seen=new Set();return out.filter(u=>!seen.has(u.id)&&seen.add(u.id)).sort((a,b)=>a.nome.localeCompare(b.nome));}
+async function getJ(file){
+  if(isBS()&&file==="index.json")return{data_set:"Warhammer 40,000 – 11a Edizione (BSData)",fazioni:BS_FILES.map(n=>({id:n,nome:n,file:n}))};
+  if(cfg.demo||!cfg.repo){ if(file==="index.json")return DEMO.index; const id=file.replace(".json","");return DEMO.fazioni[id]; }
+  const r=await fetch(base()+file,{cache:"no-cache"}); if(!r.ok)throw new Error(`${file}: HTTP ${r.status}`); return r.json();
+}
+async function loadFaz(f){ if(!cache[f.id])cache[f.id]=isBS()?await loadBS(f.file):(await getJ(f.file)).unita||[]; return cache[f.id]; }
+function newList(){const l={id:uid(),nome:"Nuova lista",max:2000,faz:index?.fazioni?.[0]?.id||"",unita:[]};lists.push(l);cur=l.id;save();}
+const unitDef=u=>(cache[L().faz]||[]).find(x=>x.id===u.def);
+const uPts=u=>{const d=unitDef(u);if(!d)return 0;const p=(d.punti.find(x=>x.modelli===u.mod)||d.punti[0]).punti;const e=(d.potenziamenti||[]).find(x=>x.nome===u.pot);return p+(e?e.punti:0)};
+async function init(){
+  $("#msg").innerHTML="";
+  try{index=await getJ("index.json");}catch(e){index=null;$("#msg").innerHTML=`<div class="msg"><b>Impossibile caricare i dati da GitHub.</b> ${esc(e.message)}. Controlla repository, branch e cartella in «Origine dei dati», oppure usa i dati locali.</div>`;}
+  $("#ds").textContent=index?.data_set||"Costruttore di liste d'armata";
+  $("#fz").innerHTML=(index?.fazioni||[]).map(f=>`<option value="${esc(f.id)}">${esc(f.nome)}</option>`).join("");
+  if(!lists.length||!L())newList();
+  if(index&&!index.fazioni.some(f=>f.id===L().faz))L().faz=index.fazioni[0]?.id||"";
+  $("#fz").value=L().faz; await loadCur(); render();
+}
+async function loadCur(){const f=index?.fazioni?.find(x=>x.id===L().faz);if(!f)return;try{await loadFaz(f)}catch(e){$("#msg").innerHTML=`<div class="msg">Errore nel caricamento della fazione: ${esc(e.message)}</div>`}}
+function render(){
+  const l=L();
+  $("#repo").value=cfg.repo;$("#br").value=cfg.branch;$("#pth").value=cfg.path;
+  $("#ls").innerHTML=lists.map(x=>`<option value="${x.id}">${esc(x.nome)}</option>`).join("");$("#ls").value=cur;
+  $("#nm").value=l.nome;$("#mp").value=l.max;
+  const q=$("#q").value.trim().toLowerCase(),defs=(cache[l.faz]||[]).filter(d=>d.nome.toLowerCase().includes(q));
+  const groups={};defs.forEach(d=>(groups[d.ruolo||"Altro"]??=[]).push(d));
+  $("#cat").innerHTML=Object.keys(groups).map(r=>`<div class="cat">${esc(r)}</div>`+groups[r].map(d=>`<div class="cat-i"><span>${esc(d.nome)}</span><span>${d.punti[0].punti} pt <button data-add="${esc(d.id)}" aria-label="Aggiungi ${esc(d.nome)}">Aggiungi</button></span></div>`).join("")).join("")||`<p class="mut">Nessuna unità trovata.</p>`;
+  const tot=l.unita.reduce((s,u)=>s+uPts(u),0),pct=l.max?Math.min(100,tot/l.max*100):0;
+  $("#sum").className=tot>l.max&&l.max?"over":"";
+  $("#sum").innerHTML=`<div class="tot">${tot} <span style="font-size:1.1rem" class="mut">/ ${l.max} punti</span></div><div class="bar"><i style="width:${pct}%"></i></div>`+(tot>l.max&&l.max?`<div class="mut">Hai superato il limite di ${tot-l.max} punti.</div>`:"");
+  $("#units").innerHTML=l.unita.map(u=>{const d=unitDef(u);if(!d)return`<div class="u">Unità non trovata (${esc(u.def)}) <button data-rm="${u.id}">Rimuovi</button></div>`;
+   return`<div class="u${u.war?" w":""}"><div class="row" style="justify-content:space-between"><h3>${esc(u.nomec||d.nome)}</h3><span class="pts">${uPts(u)} pt</span></div>
+   <div class="row"><div><label>Modelli</label><select data-f="mod" data-id="${u.id}">${d.punti.map(p=>`<option value="${p.modelli}"${p.modelli===u.mod?" selected":""}>${d.base?"Costo base":p.modelli+" modelli"} (${p.punti} pt)</option>`).join("")}</select></div>
+   ${d.potenziamenti?`<div><label>Potenziamento</label><select data-f="pot" data-id="${u.id}"><option value="">Nessuno</option>${d.potenziamenti.map(p=>`<option${p.nome===u.pot?" selected":""} value="${esc(p.nome)}">${esc(p.nome)} (+${p.punti})</option>`).join("")}</select></div>`:""}
+   <div><label>Nome personalizzato</label><input data-f="nomec" data-id="${u.id}" value="${esc(u.nomec||"")}"></div></div>
+   <label>Note</label><textarea data-f="note" data-id="${u.id}" rows="2" style="width:100%">${esc(u.note||"")}</textarea>
+   <div class="row" style="margin-top:.5rem"><label style="margin:0"><input type="checkbox" data-f="war" data-id="${u.id}"${u.war?" checked":""}> Condottiero</label><button data-dup="${u.id}">Duplica</button><button data-rm="${u.id}">Rimuovi</button></div></div>`}).join("")||`<p class="mut">La lista è vuota. Scegli un'unità dal catalogo e premi «Aggiungi».</p>`;
+}
+const upd=()=>{save();render()};
+document.addEventListener("click",e=>{const t=e.target,l=L();
+ if(t.dataset.add){const d=cache[l.faz].find(x=>x.id===t.dataset.add);l.unita.push({id:uid(),def:d.id,mod:d.punti[0].modelli});upd()}
+ else if(t.dataset.rm){l.unita=l.unita.filter(u=>u.id!==t.dataset.rm);upd()}
+ else if(t.dataset.dup){const u=l.unita.find(x=>x.id===t.dataset.dup);l.unita.splice(l.unita.indexOf(u)+1,0,{...u,id:uid(),war:false});upd()}});
+document.addEventListener("change",e=>{const t=e.target,l=L();
+ if(t.dataset.f){const u=l.unita.find(x=>x.id===t.dataset.id);if(t.dataset.f==="war"){l.unita.forEach(x=>x.war=false);u.war=t.checked}else u[t.dataset.f]=t.dataset.f==="mod"?+t.value:t.value;
+  if(t.dataset.f==="nomec"||t.dataset.f==="note"){save();return}upd()}});
+$("#nm").oninput=e=>{L().nome=e.target.value;save();$("#ls").selectedOptions[0].textContent=e.target.value};
+$("#mp").oninput=e=>{L().max=+e.target.value||0;upd()};
+$("#q").oninput=render;
+$("#ls").onchange=async e=>{cur=e.target.value;save();$("#fz").value=L().faz;await loadCur();render()};
+$("#fz").onchange=async e=>{const l=L();if(l.unita.length&&!confirm("Cambiando fazione le unità attuali verranno rimosse. Continuare?")){e.target.value=l.faz;return}l.faz=e.target.value;l.unita=[];await loadCur();upd()};
+$("#bNew").onclick=async()=>{newList();$("#fz").value=L().faz;await loadCur();render()};
+$("#bDel").onclick=async()=>{if(!confirm("Eliminare questa lista?"))return;lists=lists.filter(x=>x.id!==cur);cur=lists[0]?.id||null;if(!cur)newList();save();$("#fz").value=L().faz;await loadCur();render()};
+$("#bSave").onclick=()=>{cfg={repo:$("#repo").value.trim(),branch:$("#br").value.trim()||"main",path:$("#pth").value.trim(),demo:false};LS.set("wo_cfg2",cfg);cache={};init()};
+$("#bDemo").onclick=()=>{cfg.demo=true;LS.set("wo_cfg2",cfg);cache={};init()};
+$("#bExp").onclick=()=>{const a=document.createElement("a");a.href=URL.createObjectURL(new Blob([JSON.stringify(L(),null,2)],{type:"application/json"}));a.download=(L().nome||"lista")+".json";a.click()};
+$("#bImp").onclick=()=>{const i=document.createElement("input");i.type="file";i.accept=".json";i.onchange=async()=>{try{const l=JSON.parse(await i.files[0].text());l.id=uid();lists.push(l);cur=l.id;save();$("#fz").value=l.faz;await loadCur();render()}catch{alert("File non valido.")}};i.click()};
+$("#bTxt").onclick=async()=>{const l=L(),tot=l.unita.reduce((s,u)=>s+uPts(u),0);
+ const t=`${l.nome} (${tot}/${l.max} pt)\n`+l.unita.map(u=>{const d=unitDef(u);return d?`- ${u.nomec||d.nome} ${d?.base?"":" x"+u.mod}${u.war?" [Condottiero]":""}${u.pot?" ["+u.pot+"]":""} – ${uPts(u)} pt${u.note?"\n  "+u.note:""}`:""}).join("\n");
+ try{await navigator.clipboard.writeText(t);$("#bTxt").textContent="Copiato";setTimeout(()=>$("#bTxt").textContent="Copia testo",1500)}catch{prompt("Copia il testo:",t)}};
+init();
+</script>
+</body>
+</html>
