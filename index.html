@@ -99,13 +99,13 @@ function bsUnits(node,out){ if(!node||typeof node!=="object")return;
   if(!Array.isArray(node)&&g(node,"type")==="unit"&&g(node,"name")){
     let p=ptsOf(node);if(!p){const f=[];(function w(n){if(n&&typeof n==="object"){if(!Array.isArray(n)){const c=ptsOf(n);if(c)f.push(c)}Object.values(n).forEach(w)}})(node);p=f.length?Math.min(...f):0}
     const cats=kids(node,"categoryLinks").map(c=>g(c,"name")).filter(n=>n&&!/^faction/i.test(n));
-    const r=cats.find(c=>RUOLI[c])||cats[0]||"Altro";
+    const r=["Epic Hero","Character","Characters","Battleline"].find(c=>cats.includes(c))||cats.find(c=>RUOLI[c])||cats[0]||"Altro";
     out.push({id:g(node,"id")||g(node,"name"),nome:g(node,"name"),ruolo:RUOLI[r]||r,base:true,punti:[{modelli:1,punti:p}]});}
   Object.values(node).forEach(v=>bsUnits(v,out));}
-async function loadBS(file){const out=[];
+async function loadBS(file){const out=[];let top="";
   for(const f of bsFiles(file)){const r=await fetch(base()+encodeURIComponent(f+".json"));if(!r.ok)throw new Error(`${f}.json: HTTP ${r.status}`);
-    const j=await r.json(),n=out.length;bsUnits(j,out);
-    if(f===file&&out.length===n)throw new Error(`nessuna unità riconosciuta in ${f}.json (chiavi principali: ${Object.keys(j).slice(0,8).join(", ")})`)}
+    const j=await r.json();bsUnits(j,out);if(f===file)top=Object.keys(j).slice(0,8).join(", ")}
+  if(!out.length)throw new Error(`nessuna unità riconosciuta per ${file} (chiavi principali: ${top})`);
   const seen=new Set();return out.filter(u=>!seen.has(u.id)&&seen.add(u.id)).sort((a,b)=>a.nome.localeCompare(b.nome));}
 async function getJ(file){
   if(isBS()&&file==="index.json")return{data_set:"Warhammer 40,000 – 11a Edizione (BSData)",fazioni:BS_FILES.map(n=>({id:n,nome:n,file:n}))};
@@ -125,7 +125,7 @@ async function init(){
   if(index&&!index.fazioni.some(f=>f.id===L().faz))L().faz=index.fazioni[0]?.id||"";
   $("#fz").value=L().faz; await loadCur(); render();
 }
-async function loadCur(){const f=index?.fazioni?.find(x=>x.id===L().faz);if(!f)return;try{await loadFaz(f)}catch(e){$("#msg").innerHTML=`<div class="msg">Errore nel caricamento della fazione: ${esc(e.message)}</div>`}}
+async function loadCur(){$("#msg").innerHTML="";const f=index?.fazioni?.find(x=>x.id===L().faz);if(!f)return;try{await loadFaz(f)}catch(e){$("#msg").innerHTML=`<div class="msg">Errore nel caricamento della fazione: ${esc(e.message)}</div>`}}
 function render(){
   const l=L();
   $("#repo").value=cfg.repo;$("#br").value=cfg.branch;$("#pth").value=cfg.path;
